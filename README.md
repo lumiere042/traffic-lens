@@ -2,9 +2,7 @@
 
 **See what talks to what in your system.** traffic-lens is a [Claude Code](https://claude.com/claude-code) skill that maps every API call between your apps, services, workers, databases, queues and third-party APIs, and turns it into an interactive diagram you can open in any browser.
 
-[![Watch the 38-second demo](media/demo-poster.jpg)](media/traffic-lens-demo.mp4)
-
-<p align="center"><a href="media/traffic-lens-demo.mp4"><b>▶ Watch the demo (38 s)</b></a></p>
+https://github.com/user-attachments/assets/ddbbb3b2-80e5-44e7-8964-2c85925883ce
 
 ## Why
 
