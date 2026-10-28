@@ -1,0 +1,82 @@
+{
+  "title": "Commerce API",
+  "subtitle": "Production traffic topology",
+  "groups": [{ "id": "data", "label": "Data tier" }],
+  "nodes": [
+    { "id": "storefront", "label": "Storefront", "kind": "client", "tech": "Next.js", "location": "apps/web", "exposure": "public" },
+    { "id": "mobile", "label": "Mobile app", "kind": "client", "tech": "iOS · Android", "location": "apps/mobile" },
+    { "id": "gateway", "label": "Edge gateway", "kind": "gateway", "tech": "Public routing", "location": "infra/gateway/routes.yaml", "exposure": "public",
+      "aliases": ["api.shop.dev", "gateway:8080"] },
+    { "id": "auth", "label": "Auth", "kind": "auth", "tech": "Sessions · JWT", "location": "services/auth", "exposure": "internal", "aliases": ["auth:4001"],
+      "endpoints": [
+        { "method": "POST", "path": "/sessions", "auth": "none", "location": "services/auth/src/routes.ts:12" },
+        { "method": "POST", "path": "/tokens/verify", "auth": "internal", "location": "services/auth/src/routes.ts:31" }
+      ] },
+    { "id": "shop-api", "label": "shop-api", "kind": "service", "tech": "Express · REST", "location": "services/shop", "exposure": "internal", "aliases": ["shop-api:4000"],
+      "endpoints": [
+        { "method": "GET", "path": "/products", "auth": "none", "location": "services/shop/src/routes/products.ts:8" },
+        { "method": "GET", "path": "/products/{productId}", "auth": "none", "location": "services/shop/src/routes/products.ts:19" },
+        { "method": "POST", "path": "/cart/items", "auth": "none", "location": "services/shop/src/routes/cart.ts:14" },
+        { "method": "POST", "path": "/checkout", "auth": "jwt", "location": "services/shop/src/routes/checkout.ts:22" },
+        { "method": "GET", "path": "/orders/:id", "auth": "jwt", "location": "services/shop/src/routes/orders.ts:11" },
+        { "method": "DELETE", "path": "/orders/:id", "auth": "jwt", "location": "services/shop/src/routes/orders.ts:40" },
+        { "method": "GET", "path": "/admin/reports", "auth": "jwt", "location": "services/shop/src/routes/admin.ts:6" }
+      ] },
+    { "id": "stripe", "label": "Stripe", "kind": "external", "tech": "Payments", "aliases": ["api.stripe.com"] },
+    { "id": "order-events", "label": "Order events", "kind": "queue", "tech": "Kafka topic", "location": "services/shop/src/events.ts" },
+    { "id": "orders-worker", "label": "Orders worker", "kind": "worker", "tech": "Background jobs", "location": "services/worker" },
+    { "id": "redis", "label": "Redis cache", "kind": "cache", "tech": "Hot reads", "group": "data", "aliases": ["redis:6379", "redis"] },
+    { "id": "orders-db", "label": "Orders DB", "kind": "database", "tech": "PostgreSQL", "group": "data", "aliases": ["orders-db:5432", "postgresql"] },
+    { "id": "receipts", "label": "Receipts", "kind": "storage", "tech": "S3 bucket", "group": "data", "aliases": ["receipts.s3.amazonaws.com"] }
+  ],
+  "edges": [
+    { "source": "storefront", "target": "gateway", "protocol": "http",
+      "calls": [
+        { "method": "GET", "path": "/products", "locations": ["apps/web/lib/api.ts:14"] },
+        { "method": "GET", "path": "/products/${id}", "locations": ["apps/web/lib/api.ts:18"] },
+        { "method": "POST", "path": "/cart/items", "auth": "none", "locations": ["apps/web/lib/cart.ts:9"] },
+        { "method": "POST", "path": "/checkout", "auth": "jwt", "locations": ["apps/web/app/checkout/actions.ts:31"] },
+        { "method": "GET", "path": "/orders/${orderId}", "auth": "jwt", "locations": ["apps/web/app/orders/[id]/page.tsx:12"] },
+        { "method": "GET", "path": "/wishlist", "auth": "jwt", "locations": ["apps/web/lib/wishlist.ts:5"] }
+      ] },
+    { "source": "mobile", "target": "gateway", "protocol": "http",
+      "calls": [
+        { "method": "GET", "path": "/products", "locations": ["apps/mobile/src/api/client.ts:22"] },
+        { "method": "POST", "path": "/checkout", "auth": "jwt", "locations": ["apps/mobile/src/api/client.ts:48"] }
+      ] },
+    { "source": "gateway", "target": "auth", "protocol": "http",
+      "calls": [{ "method": "POST", "path": "/tokens/verify", "auth": "internal", "locations": ["infra/gateway/routes.yaml:4"] }] },
+    { "source": "gateway", "target": "shop-api", "protocol": "http", "description": "Gateway forwards /* to shop-api after token verification",
+      "calls": [
+        { "method": "GET", "path": "/products", "locations": ["infra/gateway/routes.yaml:12"] },
+        { "method": "GET", "path": "/products/:id", "locations": ["infra/gateway/routes.yaml:12"] },
+        { "method": "POST", "path": "/cart/items", "locations": ["infra/gateway/routes.yaml:12"] },
+        { "method": "POST", "path": "/checkout", "locations": ["infra/gateway/routes.yaml:12"] },
+        { "method": "GET", "path": "/orders/:id", "locations": ["infra/gateway/routes.yaml:12"] },
+        { "method": "GET", "path": "/wishlist", "locations": ["infra/gateway/routes.yaml:12"] }
+      ] },
+    { "source": "shop-api", "target": "stripe", "protocol": "http",
+      "calls": [{ "method": "POST", "path": "/v1/payment_intents", "locations": ["services/shop/src/payments.ts:27"] }] },
+    { "source": "shop-api", "target": "order-events", "protocol": "kafka", "async": true,
+      "calls": [{ "method": "PUBLISH", "path": "", "operation": "order.created", "locations": ["services/shop/src/events.ts:15"] }] },
+    { "source": "order-events", "target": "orders-worker", "protocol": "kafka", "async": true,
+      "calls": [{ "method": "RECEIVE", "path": "", "operation": "order.created", "locations": ["services/worker/src/consumers/orders.ts:9"] }] },
+    { "source": "shop-api", "target": "redis", "protocol": "redis",
+      "calls": [{ "method": "GET", "path": "", "operation": "product:*", "locations": ["services/shop/src/cache.ts:11"] }] },
+    { "source": "shop-api", "target": "orders-db", "protocol": "sql",
+      "calls": [{ "method": "SELECT", "path": "", "operation": "orders", "locations": ["services/shop/src/db/orders.ts:20"] },
+                { "method": "INSERT", "path": "", "operation": "orders", "locations": ["services/shop/src/db/orders.ts:44"] }] },
+    { "source": "orders-worker", "target": "orders-db", "protocol": "sql",
+      "calls": [{ "method": "UPDATE", "path": "", "operation": "orders", "locations": ["services/worker/src/jobs/fulfil.ts:31"] }] },
+    { "source": "orders-worker", "target": "receipts", "protocol": "s3",
+      "calls": [{ "method": "PUT", "path": "/receipts/:orderId.pdf", "locations": ["services/worker/src/jobs/receipt.ts:18"] }] }
+  ],
+  "flows": [
+    { "id": "checkout", "name": "Checkout", "description": "Customer pays for their cart",
+      "entry": { "node": "gateway", "method": "POST", "path": "/checkout" },
+      "steps": ["storefront->gateway", "gateway->auth", "gateway->shop-api", "shop-api->stripe", "shop-api->orders-db", "shop-api->order-events", "order-events->orders-worker", "orders-worker->orders-db", "orders-worker->receipts"] },
+    { "id": "view-order", "name": "View order", "entry": { "node": "gateway", "method": "GET", "path": "/orders/:id" },
+      "steps": ["storefront->gateway", "gateway->auth", "gateway->shop-api", "shop-api->redis", "shop-api->orders-db"] }
+  ],
+  "notes": ["Gateway path prefixes (/api/v1) are stripped before forwarding to shop-api."]
+}

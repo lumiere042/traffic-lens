@@ -1,0 +1,18 @@
+{
+  "name": "postboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "A small multi-service post board that does CRUD against JSONPlaceholder",
+  "engines": { "node": ">=22.5" },
+  "scripts": {
+    "start": "node start.mjs",
+    "start:fresh": "node start.mjs --fresh",
+    "simulate": "node scripts/simulate.mjs",
+    "capture": "node scripts/capture-har.mjs",
+    "map": "node scripts/map.mjs --open",
+    "live": "node scripts/map.mjs --live",
+    "baseline": "node scripts/map.mjs --baseline",
+    "diff": "node scripts/map.mjs --diff"
+  }
+}

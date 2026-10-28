@@ -1,0 +1,5 @@
+data/
+telemetry/
+captures/
+.traffic-lens/
+node_modules/

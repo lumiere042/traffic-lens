@@ -1,0 +1,8 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+model Product { id Int @id name String priceCents Int }
+model CartItem { id Int @id userId Int productId Int qty Int }
+model Order { id Int @id userId Int totalCents Int status String }
+model User { id Int @id email String name String }

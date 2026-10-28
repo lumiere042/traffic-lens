@@ -1,0 +1,7 @@
+---
+type: llm
+focus: trace
+weight: 1
+---
+
+The result matches this description: An interactive HTML diagram of the sample-shop repo showing web, api, payments, notifier, postgres, redis, the order.placed queue, Stripe, SendGrid and Mixpanel, with the routes on each connection and file:line evidence. The reply points to the file and calls out real problems: the web app calls GET /users/:id/profile which the API does not define, the notifier calls POST /internal/orders/:id/notified which does not exist, and the /admin routes (including DELETE /admin/users/:id) have no auth.

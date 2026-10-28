@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Postboard</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <header class="top">
+    <div class="brand"><span class="logo">▦</span> Postboard</div>
+    <p class="quote" id="quote">Loading quote…</p>
+    <form id="login-form" class="auth">
+      <select id="login-user" aria-label="User"><option>Loading users…</option></select>
+      <input id="login-pass" type="password" placeholder="password (demo)" aria-label="Password">
+      <button type="submit">Sign in</button>
+    </form>
+    <div class="auth signed" id="signed-in">
+      <span id="whoami"></span>
+      <button id="logout" class="ghost" type="button">Sign out</button>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="toolbar">
+      <form id="search-form" class="search">
+        <input id="search" type="search" placeholder="Search posts…" aria-label="Search">
+        <button type="submit" class="ghost">Search</button>
+      </form>
+      <button id="new-post" type="button">New post</button>
+    </section>
+
+    <form id="composer" class="composer" hidden>
+      <input type="hidden" id="post-id">
+      <input id="post-title" placeholder="Title" required>
+      <textarea id="post-body" rows="3" placeholder="What's on your mind?"></textarea>
+      <div class="row">
+        <button type="submit" id="save-post">Publish</button>
+        <button type="button" class="ghost" id="cancel-post">Cancel</button>
+      </div>
+    </form>
+
+    <ul id="posts" class="posts"></ul>
+  </main>
+
+  <dialog id="detail">
+    <article>
+      <header class="detail-head">
+        <h2 id="detail-title"></h2>
+        <button type="button" class="ghost" id="detail-close" aria-label="Close">✕</button>
+      </header>
+      <p class="muted" id="detail-author"></p>
+      <p id="detail-body"></p>
+      <h3>Comments</h3>
+      <div id="comments" class="muted">Loading…</div>
+    </article>
+  </dialog>
+
+  <footer class="foot">
+    <span><span class="dot" id="api-dot"></span> <span id="api-status">checking API…</span></span>
+    <button type="button" class="ghost danger" id="reset">Reset demo data</button>
+  </footer>
+
+  <div id="toast" class="toast" role="status"></div>
+  <script type="module" src="/app.js"></script>
+</body>
+</html>

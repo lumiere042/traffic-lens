@@ -1,0 +1,34 @@
+services:
+  web:
+    build: ./apps/web
+    ports: ["3000:3000"]
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+  api:
+    build: ./services/api
+    ports: ["4000:4000"]
+    environment:
+      DATABASE_URL: postgres://shop:shop@postgres:5432/shop
+      REDIS_URL: redis://redis:6379
+      AMQP_URL: amqp://rabbitmq:5672
+      PAYMENTS_URL: http://payments:8000
+      PAYMENTS_TOKEN: dev-internal-token
+    depends_on: [postgres, redis, rabbitmq, payments]
+  payments:
+    build: ./services/payments
+    environment:
+      STRIPE_API_KEY: sk_test_123
+      INTERNAL_TOKEN: dev-internal-token
+  notifier:
+    build: ./services/notifier
+    environment:
+      AMQP_URL: amqp://rabbitmq:5672
+      API_URL: http://api:4000
+      SENDGRID_API_KEY: SG.test
+    depends_on: [rabbitmq]
+  postgres:
+    image: postgres:16
+  redis:
+    image: redis:7
+  rabbitmq:
+    image: rabbitmq:3-management
